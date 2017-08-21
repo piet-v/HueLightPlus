@@ -16,18 +16,18 @@ Ambilight-clone for NZXT HUE+
 # Assumptions
 * Current version assumes the LEDS strips are mounted as follows:
 
-x ← ← TOP ← ←x
-↓			 ↑ 
-↓			 ↑ 
-↓			 ↑ 
-L			 R
-E			 I
-F			 G
-T			 H
-↓			 T 
-↓			 ↑ 
-↓			 ↑ 
-x ← BOTTOM ← x ← ← ← ← ← ← HUE+
+* x ← ← TOP ← ←x
+* ↓          ↑ 
+* ↓          ↑ 
+* ↓          ↑ 
+* L          R
+* E          I
+* F          G
+* T          H
+* ↓          T 
+* ↓          ↑ 
+* ↓          ↑ 
+* x ← BOTTOM ← x ← ← ← ← ← ← HUE+
 
 * Channel 1: (Right (10 leds) => Top (20 leds) => Left (10 leds))
 ** Right: bottom-right => top-right
