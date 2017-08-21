@@ -23,3 +23,7 @@ Ambilight-clone for NZXT HUE+
 
 # Showcase video
 [https://www.youtube.com/watch?v=hn5HEN5PzPE](https://www.youtube.com/watch?v=hn5HEN5PzPE)
+
+# Credits
+* [h0uri](http://www.instructables.com/member/h0uri/) whos C# Ambilight algorithm was way faster and thus got used as the basis for this.
+* [kusti8](https://github.com/kusti8/hue-plus) whos project contained an example of the reverse engineered Hue+ protocol
