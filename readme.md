@@ -1,12 +1,17 @@
-# HueLight+
-
+﻿# HueLight+
 Ambilight-clone for NZXT HUE+
+[Latest Release](https://github.com/piet-v/HueLightPlus/releases/latest)
+
+# Showcase video
+[https://www.youtube.com/watch?v=hn5HEN5PzPE](https://www.youtube.com/watch?v=hn5HEN5PzPE)
 
 # Features
-* Ambilight-clone
+* Ambilight
 * High fps LED color updates (depending on CPU + resolution)
-* Supports 1 HUE+ with a max of 2 channels
-* Each channel kan have up to 4 LED strips
+* Supports max 1 Hue+
+* Supports max 2 Channels
+* Supports max 4 LED strips / channel
+* Supports config.ini to configure before launch
 
 # Requirements
 * Windows
@@ -51,16 +56,12 @@ Ambilight-clone for NZXT HUE+
   * int pixelsToSkipPerCoordinate
 
 # Todo
-* Make .exe downloadable somewhere
 * Better configuration for LED setup
 * Support more than 1 HUE+
 * Turn off LEDs after closing the software
 
 # Bugs
 * Feel free to post issues on this github page
-
-# Showcase video
-[https://www.youtube.com/watch?v=hn5HEN5PzPE](https://www.youtube.com/watch?v=hn5HEN5PzPE)
 
 # Credits
 * [h0uri](http://www.instructables.com/member/h0uri/) whos C# Ambilight algorithm was way faster and thus got used as the basis for this.
