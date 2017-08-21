@@ -14,6 +14,7 @@ Ambilight-clone for NZXT HUE+
 * [DFMirage Mirror Driver](http://www.demoforge.com/dfmirage.htm)
 
 # Todo
+* Make .exe downloadable somewhere
 * Better configuration for LED setup
 * Support more than 1 HUE+
 * Turn off LEDs after closing the software
