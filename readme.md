@@ -38,17 +38,17 @@ Ambilight-clone for NZXT HUE+
 
 # Configuration
 * A Config.ini file can be used to control certain settings. Put each value on a line without delimiters!
-** bool startsHidden;
-** double gamma;
-** int rightLedCount
-** int leftLedCount
-** int topLedCount
-** int bottomLedCount
-** String huePlusPort
-** int baudRate
-** byte delay
-** int scanDepth
-** int pixelsToSkipPerCoordinate
+  * bool startsHidden;
+  * double gamma;
+  * int rightLedCount
+  * int leftLedCount
+  * int topLedCount
+  * int bottomLedCount
+  * String huePlusPort
+  * int baudRate
+  * byte delay
+  * int scanDepth
+  * int pixelsToSkipPerCoordinate
 
 # Todo
 * Make .exe downloadable somewhere
