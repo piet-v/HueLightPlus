@@ -57,6 +57,8 @@ namespace Ambilight_DFMirage
         int totalRed;
         int totalGreen;
         int totalBlue;
+        int totalCoordinates;
+        Color currentColor;
 
         bool formIsHidden = false;
         bool isEngineEnabled = true;
@@ -353,21 +355,20 @@ namespace Ambilight_DFMirage
 
         private void FillBufferFromScreenWith(byte[] buffer, Dictionary<int, Collection<Point>> coordinates, Func<int, int> LedIterator, int ledCount)
         {
-            for (int ledIndex = 0; ledIndex < ledCount; ledIndex++)
+            foreach (var currentLedCoordinates in coordinates)
             {
                 totalRed = totalGreen = totalBlue = 0;
-                int totalColorsParsed = 0;
+                totalCoordinates = currentLedCoordinates.Value.Count;
 
-                for (int coordinateIndex = 0; coordinateIndex < coordinates[ledIndex].Count; coordinateIndex++)
+                foreach(Point currentLedCoordinate in currentLedCoordinates.Value)
                 {
-                    Color currentColor = bmpScreenshot.GetPixel(coordinates[ledIndex][coordinateIndex].X, coordinates[ledIndex][coordinateIndex].Y);
+                    currentColor = bmpScreenshot.GetPixel(currentLedCoordinate.X, currentLedCoordinate.Y);
                     totalRed += currentColor.R;
                     totalGreen += currentColor.G;
                     totalBlue += currentColor.B;
-                    totalColorsParsed++;
                 }
 
-                SetOneLedToColor(buffer, LedIterator(ledIndex), Color.FromArgb(totalRed / totalColorsParsed, totalGreen / totalColorsParsed, totalBlue / totalColorsParsed));
+                SetOneLedToColor(buffer, LedIterator(currentLedCoordinates.Key), Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
             }
         }
 
@@ -412,7 +413,7 @@ namespace Ambilight_DFMirage
         }
 
         /*** HUE PORT METHODS ***/
-
+        
         private void OpenHuePort()
         {
             while (!huePlusPort.IsOpen)
