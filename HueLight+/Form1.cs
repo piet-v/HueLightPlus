@@ -74,7 +74,7 @@ namespace Ambilight_DFMirage
             logger.Add("Started HueLight");
             InitializeComponent();
 
-            LoadJsonConfig();
+            LoadConfig();
             SetupBuffer(bufferScreen, 1);
             SetupBuffer(bufferScreen2, 2);
             SetupGammaTable();
