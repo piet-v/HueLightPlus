@@ -86,11 +86,8 @@ namespace Ambilight_DFMirage
         const byte animationGroup = 0;
         const byte animationSpeed = 2;
         const int huePlusBaudRate = 256000;
-        const double latencyMarginStep = 0.1;
-        double latencyMargin = 11;
         byte delay = 0;
         byte fpsCounter = 0;
-        byte droppedFpsCounter = 0;
         double gamma = 1;
         int scanDepth = 100;
         int pixelsToSkipPerCoordinate = 100; // Every LED region has (scanDepth * ScreenBorderPixelsInRegion / pixelsToSkipPerCoordinate) = possible coordinates. E.g. (100 * 144 / 100) = 144 coordinates;
@@ -305,38 +302,34 @@ namespace Ambilight_DFMirage
 
         private void AmbiEngine()
         {
+            frameTimer = new Stopwatch();
+            frameTimer.Start();
+
+            logger.Add("");
+            logger.Add("********************");
+            logger.Add("Starting new frame");
+
+            CalculateBuffers();
+
             while (isEngineEnabled)
             {
-                frameTimer = new Stopwatch();
-                frameTimer.Start();
-
-                while (isSendingFrame && (portWriteTimer.ElapsedMilliseconds <= latencyMargin)) ;
-
-                CalculateBuffers();
-
                 if(!isSendingFrame)
                 {
-                    logger.Add("");
-                    logger.Add("********************");
-                    logger.Add("Starting new frame");
-                    logger.Add("Calculated buffer in: " + sectionTimer.ElapsedMilliseconds);
-
                     SendBuffers();
-
-                    logger.Add("Handed off buffer to serial in: " + sectionTimer.ElapsedMilliseconds);
 
                     frameTimer.Stop();
                     logger.Add("Finished frame in: " + frameTimer.ElapsedMilliseconds);
                     logger.Add("********************");
                     logger.Add("");
-                }
-                else
-                {
-                    droppedFpsCounter++;
+
+                    frameTimer = new Stopwatch();
+                    frameTimer.Start();
 
                     logger.Add("");
-                    logger.Add("FRAME DROPPED");
-                    logger.Add("");
+                    logger.Add("********************");
+                    logger.Add("Starting new frame");
+
+                    CalculateBuffers();
                 }
             }
         }
@@ -356,6 +349,7 @@ namespace Ambilight_DFMirage
             }
 
             sectionTimer.Stop();
+            logger.Add("Calculated buffer in: " + sectionTimer.ElapsedMilliseconds);
         }
 
         private void SendBuffers()
@@ -368,6 +362,7 @@ namespace Ambilight_DFMirage
             SendBuffersToPort();
 
             sectionTimer.Stop();
+            logger.Add("Handed off buffer to serial in: " + sectionTimer.ElapsedMilliseconds);
         }
 
         private void EnableNextFrame()
@@ -558,25 +553,13 @@ namespace Ambilight_DFMirage
         private void timer1_Tick_1(object sender, EventArgs e)
         {
             String fps = "FPS: " + fpsCounter.ToString();
-            String margin = "Margin: " + latencyMargin;
-            String dropped_fps = "DROP_FPS: " + droppedFpsCounter.ToString();
             String cpu = "CPU: " + (Math.Round(total_cpu.NextValue())).ToString() + " %";
 
             notifyIcon1.Text = "HueLight+ - " + fps + " - " + cpu;
-            label1.Text = fps + " " + dropped_fps + " " + margin;
+            label1.Text = fps;
             label2.Text = cpu;
 
-            if(droppedFpsCounter > 0)
-            {
-                latencyMargin += latencyMarginStep;
-            }
-            else
-            {
-                latencyMargin -= latencyMarginStep;
-            }
-
             fpsCounter = 0;
-            droppedFpsCounter = 0;
         }
 
         /*** FORM INTERACTION ***/
