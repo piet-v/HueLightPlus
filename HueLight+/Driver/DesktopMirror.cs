@@ -432,6 +432,21 @@ namespace driver
             return result;
         }
 
+        public byte[] GetScreenBuffer()
+        {
+            GetChangesBuffer getChangesBuffer = (GetChangesBuffer)Marshal.PtrToStructure(_getChangesBuffer, typeof(GetChangesBuffer));
+            byte[] data = new byte[_bitmapWidth * _bitmapHeight * 4];
+            try
+            {
+                Marshal.Copy(getChangesBuffer.UserBuffer, data, 0, data.Length);
+            }
+            catch (AccessViolationException)
+            {
+            }
+
+            return data;
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
