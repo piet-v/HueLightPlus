@@ -237,32 +237,35 @@ namespace Ambilight_DFMirage
 
         private void SetupCoordinatesWith(ref ScreenRegion screenRegion, int xOrigin, int xMax, bool isHorizontal)
         {
-            int ratio = xMax / screenRegion.leds.Length;
-            int count = 0;
-
-            screenRegion.coordinates = new Dictionary<int, Collection<Point>>();
-
-            for (int ledIndex = 0; ledIndex < screenRegion.leds.Length; ledIndex++)
+            if (screenRegion.leds.Length > 0)
             {
-                {
-                    screenRegion.coordinates.Add(ledIndex, new Collection<Point>());
-                    for (int x = xOrigin; x < xOrigin + scanDepth; x++)
-                    {
-                        int yOrigin = ledIndex * ratio;
-                        int yMax = yOrigin + ratio;
+                int ratio = xMax / screenRegion.leds.Length;
+                int count = 0;
 
-                        for (int y = yOrigin; y < yMax; y++)
+                screenRegion.coordinates = new Dictionary<int, Collection<Point>>();
+
+                for (int ledIndex = 0; ledIndex < screenRegion.leds.Length; ledIndex++)
+                {
+                    {
+                        screenRegion.coordinates.Add(ledIndex, new Collection<Point>());
+                        for (int x = xOrigin; x < xOrigin + scanDepth; x++)
                         {
-                            count++;
-                            if ((count % pixelsToSkipPerCoordinate) == 0)
+                            int yOrigin = ledIndex * ratio;
+                            int yMax = yOrigin + ratio;
+
+                            for (int y = yOrigin; y < yMax; y++)
                             {
-                                if (isHorizontal)
+                                count++;
+                                if ((count % pixelsToSkipPerCoordinate) == 0)
                                 {
-                                    screenRegion.coordinates[ledIndex].Add(new Point(x, y));
-                                }
-                                else
-                                {
-                                    screenRegion.coordinates[ledIndex].Add(new Point(y, x));
+                                    if (isHorizontal)
+                                    {
+                                        screenRegion.coordinates[ledIndex].Add(new Point(x, y));
+                                    }
+                                    else
+                                    {
+                                        screenRegion.coordinates[ledIndex].Add(new Point(y, x));
+                                    }
                                 }
                             }
                         }
@@ -392,9 +395,9 @@ namespace Ambilight_DFMirage
 
             UpdateScreenShot();
 
-            FillBufferFromScreenWith(screenRegions.left, leftIterator);
             FillBufferFromScreenWith(screenRegions.right, rightIterator);
             FillBufferFromScreenWith(screenRegions.top, topIterator);
+            FillBufferFromScreenWith(screenRegions.left, leftIterator);
             FillBufferFromScreenWith(screenRegions.bottom, bottomIterator);
         }
 
@@ -407,11 +410,12 @@ namespace Ambilight_DFMirage
 
                 foreach (Point currentLedCoordinate in currentLedCoordinates.Value)
                 {
-                    colorIndex = Screen.PrimaryScreen.Bounds.Width * 4 * currentLedCoordinate.Y + currentLedCoordinate.X;
+                    colorIndex = Screen.PrimaryScreen.Bounds.Width * 4 * currentLedCoordinate.Y + currentLedCoordinate.X * 4;
 
-                    totalRed += screenBuffer[colorIndex++];
-                    totalGreen += screenBuffer[colorIndex++];
                     totalBlue += screenBuffer[colorIndex++];
+                    totalGreen += screenBuffer[colorIndex++];
+                    totalRed += screenBuffer[colorIndex++];
+
                 }
 
                 SetOneLedToColor(buffers[screenRegion.leds[currentLedCoordinates.Key].channel - 1], LedIterator(currentLedCoordinates.Key), Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
