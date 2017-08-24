@@ -9,6 +9,46 @@ using System.IO.Ports;
 using System.Threading;
 using System.Windows.Forms;
 
+struct Led
+{
+    public int channel;
+    public int ledIndex;
+
+    public Led(int channel, int ledIndex)
+    {
+        this.channel = channel;
+        this.ledIndex = ledIndex;
+    }
+}
+
+struct ScreenRegion
+{
+    public Led[] leds;
+    public Dictionary<int, Collection<Point>> coordinates;
+
+    public ScreenRegion(Led[] leds)
+    {
+        this.leds = leds;
+        this.coordinates = new Dictionary<int, Collection<Point>>();
+    }
+}
+
+struct ScreenRegions
+{
+    public ScreenRegion right;
+    public ScreenRegion left;
+    public ScreenRegion top;
+    public ScreenRegion bottom;
+
+    public ScreenRegions(ScreenRegion right, ScreenRegion top, ScreenRegion left, ScreenRegion bottom)
+    {
+        this.right = right;
+        this.top = top;
+        this.left = left;
+        this.bottom = bottom;
+    }
+}
+
 namespace Ambilight_DFMirage
 {
     public partial class Form1 : Form
@@ -16,10 +56,9 @@ namespace Ambilight_DFMirage
         List<string> logger = new List<string>();
         readonly driver.DesktopMirror _mirror = new driver.DesktopMirror();
         PerformanceCounter total_cpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-        Dictionary<int, Collection<Point>> leftCoordinates = new Dictionary<int, Collection<Point>>();
-        Dictionary<int, Collection<Point>> topCoordinates = new Dictionary<int, Collection<Point>>();
-        Dictionary<int, Collection<Point>> bottomCoordinates = new Dictionary<int, Collection<Point>>();
-        Dictionary<int, Collection<Point>> rightCoordinates = new Dictionary<int, Collection<Point>>();
+        Dictionary<int, SerialPort> ports = new Dictionary<int, SerialPort>();
+        Dictionary<int, byte[]> buffers = new Dictionary<int, byte[]>() { { 0, new byte[125] }, { 1, new byte[125] } };
+        ScreenRegions screenRegions;
         Func<int, int> leftIterator;
         Func<int, int> rightIterator;
         Func<int, int> topIterator;
@@ -35,8 +74,6 @@ namespace Ambilight_DFMirage
         int screenHeight = Screen.PrimaryScreen.Bounds.Height;
         int screenWidth = Screen.PrimaryScreen.Bounds.Width;
         byte[] gammaTable = new byte[256];
-        byte[] bufferScreen = new byte[125];
-        byte[] bufferScreen2 = new byte[125];
         const byte ledStripsPerChannel = 4; // Always assume max amount of strips is connected or serial stream fails (for now)
         const byte headerBits = 5;
         const byte magicBit = 75;
@@ -52,10 +89,7 @@ namespace Ambilight_DFMirage
         double gamma = 1;
         int scanDepth = 100;
         int pixelsToSkipPerCoordinate = 100; // Every LED region has (scanDepth * ScreenBorderPixelsInRegion / pixelsToSkipPerCoordinate) = possible coordinates. E.g. (100 * 144 / 100) = 144 coordinates;
-        int rightLedCount = 10;
-        int leftLedCount = 10;
-        int topLedCount = 20;
-        int bottomLedCount = 20;
+
         int totalRed;
         int totalGreen;
         int totalBlue;
@@ -75,8 +109,8 @@ namespace Ambilight_DFMirage
             InitializeComponent();
 
             LoadConfig();
-            SetupBuffer(bufferScreen, 1);
-            SetupBuffer(bufferScreen2, 2);
+            SetupBuffer(buffers[0], 1);
+            SetupBuffer(buffers[1], 2);
             SetupGammaTable();
             SetupUiLabels();
             SetupPixelIterators();
@@ -125,18 +159,21 @@ namespace Ambilight_DFMirage
 
         private void LoadConfig()
         {
-            Dictionary<String, String> config = JsonConvert.DeserializeObject<Dictionary<String, String>>(File.ReadAllText("config.json"));
+            dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config.json"));
 
-            formIsHidden = Boolean.Parse(config["startsHidden"]);
-            gamma = double.Parse(config["gamma"]);
-            rightLedCount = int.Parse(config["rightLedCount"]);
-            leftLedCount = int.Parse(config["leftLedCount"]);
-            topLedCount = int.Parse(config["topLedCount"]);
-            bottomLedCount = int.Parse(config["bottomLedCount"]);
-            huePlusPort = new SerialPort(config["huePlusPort"], huePlusBaudRate);
-            delay = byte.Parse(config["delay"]);
-            scanDepth = int.Parse(config["scanDepth"]);
-            pixelsToSkipPerCoordinate = int.Parse(config["pixelsToSkipPerCoordinate"]);
+            for (int deviceIndex = 0; deviceIndex < config.devices.Count; deviceIndex++)
+            {
+                String port = (string)config.devices[deviceIndex].port;
+                ports.Add(deviceIndex, new SerialPort(port, huePlusBaudRate));
+            }
+
+            huePlusPort = ports[0];
+            screenRegions = config.screenRegions.ToObject<ScreenRegions>();
+            formIsHidden = config.startsHidden;
+            gamma = config.gamma;
+            delay = config.delay;
+            scanDepth = config.scanDepth;
+            pixelsToSkipPerCoordinate = config.pixelsToSkipPerCoordinate;
         }
 
         private void SetupBuffer(byte[] buffer, byte channel)
@@ -172,10 +209,10 @@ namespace Ambilight_DFMirage
 
         private void SetupPixelIterators()
         {
-            leftIterator = (i) => (i + rightLedCount + topLedCount);
-            rightIterator = (i) => (rightLedCount - i - 1);
-            topIterator = (i) => (topLedCount - i + rightLedCount - 1);
-            bottomIterator = (i) => (bottomLedCount - i - 1);
+            leftIterator = (i) => (i + screenRegions.right.leds.Length + screenRegions.top.leds.Length);
+            rightIterator = (i) => (screenRegions.right.leds.Length - i - 1);
+            topIterator = (i) => (screenRegions.top.leds.Length - i + screenRegions.right.leds.Length - 1);
+            bottomIterator = (i) => (screenRegions.bottom.leds.Length - i - 1);
         }
 
         private void WriteLoggerToFile()
@@ -189,23 +226,25 @@ namespace Ambilight_DFMirage
 
         private void SetupCoordinates()
         {
-            SetupCoordinatesWith(leftCoordinates, leftLedCount, 0, screenHeight, true);
-            SetupCoordinatesWith(rightCoordinates, rightLedCount, screenWidth - (scanDepth + 1), screenHeight, true);
-            SetupCoordinatesWith(topCoordinates, topLedCount, 0, screenWidth, false);
-            SetupCoordinatesWith(bottomCoordinates, bottomLedCount, screenHeight - (scanDepth + 1), screenWidth, false);
+            SetupCoordinatesWith(ref screenRegions.left, 0, screenHeight, true);
+            SetupCoordinatesWith(ref screenRegions.right, screenWidth - (scanDepth + 1), screenHeight, true);
+            SetupCoordinatesWith(ref screenRegions.top, 0, screenWidth, false);
+            SetupCoordinatesWith(ref screenRegions.bottom, screenHeight - (scanDepth + 1), screenWidth, false);
 
             logger.Add("Calculcated coordinates");
         }
 
-        private void SetupCoordinatesWith(Dictionary<int, Collection<Point>> coordinates, int ledCount, int xOrigin, int xMax, bool isHorizontal)
+        private void SetupCoordinatesWith(ref ScreenRegion screenRegion, int xOrigin, int xMax, bool isHorizontal)
         {
-            int ratio = xMax / ledCount;
+            int ratio = xMax / screenRegion.leds.Length;
             int count = 0;
 
-            for (int ledIndex = 0; ledIndex < ledCount; ledIndex++)
+            screenRegion.coordinates = new Dictionary<int, Collection<Point>>();
+
+            for (int ledIndex = 0; ledIndex < screenRegion.leds.Length; ledIndex++)
             {
                 {
-                    coordinates.Add(ledIndex, new Collection<Point>());
+                    screenRegion.coordinates.Add(ledIndex, new Collection<Point>());
                     for (int x = xOrigin; x < xOrigin + scanDepth; x++)
                     {
                         int yOrigin = ledIndex * ratio;
@@ -218,11 +257,11 @@ namespace Ambilight_DFMirage
                             {
                                 if (isHorizontal)
                                 {
-                                    coordinates[ledIndex].Add(new Point(x, y));
+                                    screenRegion.coordinates[ledIndex].Add(new Point(x, y));
                                 }
                                 else
                                 {
-                                    coordinates[ledIndex].Add(new Point(y, x));
+                                    screenRegion.coordinates[ledIndex].Add(new Point(y, x));
                                 }
                             }
                         }
@@ -322,8 +361,8 @@ namespace Ambilight_DFMirage
 
         private void FillBuffersWithColor(Color color)
         {
-            SetAllLedsToColor(bufferScreen, color);
-            SetAllLedsToColor(bufferScreen2, color);
+            SetAllLedsToColor(buffers[0], color);
+            SetAllLedsToColor(buffers[1], color);
         }
 
         private void FillBuffersFromScreen()
@@ -335,22 +374,24 @@ namespace Ambilight_DFMirage
 
             UpdateScreenShot();
 
-            FillBufferFromScreenWith(bufferScreen, leftCoordinates, leftIterator, leftLedCount);
-            FillBufferFromScreenWith(bufferScreen, rightCoordinates, rightIterator, rightLedCount);
-            FillBufferFromScreenWith(bufferScreen, topCoordinates, topIterator, topLedCount);
-            FillBufferFromScreenWith(bufferScreen2, bottomCoordinates, bottomIterator, bottomLedCount);
+            FillBufferFromScreenWith(screenRegions.left, leftIterator);
+            FillBufferFromScreenWith(screenRegions.right, rightIterator);
+            FillBufferFromScreenWith(screenRegions.top, topIterator);
+            FillBufferFromScreenWith(screenRegions.bottom, bottomIterator);
 
             DisposeScreenShot();
         }
 
-        private void FillBufferFromScreenWith(byte[] buffer, Dictionary<int, Collection<Point>> coordinates, Func<int, int> LedIterator, int ledCount)
+        private void FillBufferFromScreenWith(ScreenRegion screenRegion, Func<int, int> LedIterator)
         {
-            foreach (var currentLedCoordinates in coordinates)
+            var leds = screenRegion.leds;
+
+            foreach (var currentLedCoordinates in screenRegion.coordinates)
             {
                 totalRed = totalGreen = totalBlue = 0;
                 totalCoordinates = currentLedCoordinates.Value.Count;
 
-                foreach(Point currentLedCoordinate in currentLedCoordinates.Value)
+                foreach (Point currentLedCoordinate in currentLedCoordinates.Value)
                 {
                     currentColor = bmpScreenshot.GetPixel(currentLedCoordinate.X, currentLedCoordinate.Y);
                     totalRed += currentColor.R;
@@ -358,7 +399,7 @@ namespace Ambilight_DFMirage
                     totalBlue += currentColor.B;
                 }
 
-                SetOneLedToColor(buffer, LedIterator(currentLedCoordinates.Key), Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                SetOneLedToColor(buffers[leds[currentLedCoordinates.Key].channel - 1], LedIterator(currentLedCoordinates.Key), Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
             }
         }
 
@@ -391,9 +432,9 @@ namespace Ambilight_DFMirage
         {
             try
             {
-                WriteAndCallback(bufferScreen, () =>
+                WriteAndCallback(buffers[0], () =>
                 {
-                    WriteAndCallback(bufferScreen2, EnableNextFrame);
+                    WriteAndCallback(buffers[1], EnableNextFrame);
                 });
             }
             catch (Exception e)
@@ -403,7 +444,7 @@ namespace Ambilight_DFMirage
         }
 
         /*** HUE PORT METHODS ***/
-        
+
         private void OpenHuePort()
         {
             while (!huePlusPort.IsOpen)
