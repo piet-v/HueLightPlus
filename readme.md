@@ -58,7 +58,10 @@ Ambilight-clone for NZXT HUE+
 # Todo
 * Better configuration for LED setup
 * Support more than 1 HUE+
+* Multi monitor
 * Turn off LEDs after closing the software
+* (Maybe) NZXT Kraken Support
+* (Maybe) NZXT AER FAN Support
 
 # Bugs
 * Feel free to post issues on this github page
