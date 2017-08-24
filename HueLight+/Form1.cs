@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -45,6 +46,7 @@ namespace Ambilight_DFMirage
         const byte animationOptions = 0;
         const byte animationGroup = 0;
         const byte animationSpeed = 2;
+        const int huePlusBaudRate = 256000;
         byte delay = 0;
         byte fpsCounter = 0;
         double gamma = 1;
@@ -72,7 +74,7 @@ namespace Ambilight_DFMirage
             logger.Add("Started HueLight");
             InitializeComponent();
 
-            LoadConfig();
+            LoadJsonConfig();
             SetupBuffer(bufferScreen, 1);
             SetupBuffer(bufferScreen2, 2);
             SetupGammaTable();
@@ -123,30 +125,18 @@ namespace Ambilight_DFMirage
 
         private void LoadConfig()
         {
-            int i = 0;
+            Dictionary<String, String> config = JsonConvert.DeserializeObject<Dictionary<String, String>>(File.ReadAllText("config.json"));
 
-            try
-            {
-                string[] config = File.ReadAllLines("Config.ini");
-                formIsHidden = bool.Parse(config[i++]);
-                gamma = double.Parse(config[i++]);
-                rightLedCount = int.Parse(config[i++]);
-                leftLedCount = int.Parse(config[i++]);
-                topLedCount = int.Parse(config[i++]);
-                bottomLedCount = int.Parse(config[i++]);
-                huePlusPort = new SerialPort(config[i++], int.Parse(config[i++]));
-                delay = byte.Parse(config[i++]);
-                scanDepth = int.Parse(config[i++]);
-                pixelsToSkipPerCoordinate = int.Parse(config[i++]);
-
-                logger.Add("Read Config.ini");
-                logger.Add("Config Parsed");
-            }
-            catch (FileNotFoundException)
-            {
-                huePlusPort = new SerialPort("COM3", 256000);
-                logger.Add("Config.ini not found, using defaults");
-            }
+            formIsHidden = Boolean.Parse(config["startsHidden"]);
+            gamma = double.Parse(config["gamma"]);
+            rightLedCount = int.Parse(config["rightLedCount"]);
+            leftLedCount = int.Parse(config["leftLedCount"]);
+            topLedCount = int.Parse(config["topLedCount"]);
+            bottomLedCount = int.Parse(config["bottomLedCount"]);
+            huePlusPort = new SerialPort(config["huePlusPort"], huePlusBaudRate);
+            delay = byte.Parse(config["delay"]);
+            scanDepth = int.Parse(config["scanDepth"]);
+            pixelsToSkipPerCoordinate = int.Parse(config["pixelsToSkipPerCoordinate"]);
         }
 
         private void SetupBuffer(byte[] buffer, byte channel)
