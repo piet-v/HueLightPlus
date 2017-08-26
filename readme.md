@@ -18,29 +18,6 @@ Ambilight-clone for NZXT HUE+
 * [NZXT HUE+](https://www.nzxt.com/products/hue-plus)
 * [DFMirage Mirror Driver](http://www.demoforge.com/dfmirage.htm)
 
-# Assumptions
-* Current version assumes the LEDS strips are mounted as follows:
-
-* x ← ← TOP ← ←x
-* ↓                    ↑ 
-* ↓                    ↑ 
-* ↓                    ↑ 
-* L                    R
-* E                    I
-* F                    G
-* T                    H
-* ↓                    T 
-* ↓                    ↑ 
-* ↓                    ↑ 
-* x ← BOTTOM ← x ← ← ← ← ← ← HUE+
-
-* Channel 1: (Right (10 leds) => Top (20 leds) => Left (10 leds))
-** Right: bottom-right => top-right
-** Top: top-right => top-left
-** Left: top-left => bottom-left
-* Channel 2 (Bottom (20 leds)
-** Bottom: bottom-left => bottom-right
-
 # Configuration
 * A Config.json file can be used to control certain settings.
   * bool startsHidden;
