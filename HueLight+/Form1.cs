@@ -59,10 +59,6 @@ namespace Ambilight_DFMirage
         Dictionary<int, SerialPort> ports = new Dictionary<int, SerialPort>();
         Dictionary<int, byte[]> buffers = new Dictionary<int, byte[]>() { { 0, new byte[125] }, { 1, new byte[125] } };
         ScreenRegions screenRegions;
-        Func<int, int> leftIterator;
-        Func<int, int> rightIterator;
-        Func<int, int> topIterator;
-        Func<int, int> bottomIterator;
         Stopwatch frameTimer;
         Stopwatch portChannelTimer;
         Stopwatch portWriteTimer;
@@ -114,7 +110,6 @@ namespace Ambilight_DFMirage
             SetupBuffer(buffers[1], 2);
             SetupGammaTable();
             SetupUiLabels();
-            SetupPixelIterators();
 
             Microsoft.Win32.SystemEvents.SessionSwitch += CloseForm;
             logger.Add("Hooked session switch event");
@@ -206,14 +201,6 @@ namespace Ambilight_DFMirage
             label7.Text = "ScanDepth: " + scanDepth.ToString() + " Skip: " + pixelsToSkipPerCoordinate.ToString();
 
             logger.Add("Loaded form labels ");
-        }
-
-        private void SetupPixelIterators()
-        {
-            leftIterator = (i) => (i + screenRegions.right.leds.Length + screenRegions.top.leds.Length);
-            rightIterator = (i) => (screenRegions.right.leds.Length - i - 1);
-            topIterator = (i) => (screenRegions.top.leds.Length - i + screenRegions.right.leds.Length - 1);
-            bottomIterator = (i) => (screenRegions.bottom.leds.Length - i - 1);
         }
 
         private void WriteLoggerToFile()
@@ -395,13 +382,13 @@ namespace Ambilight_DFMirage
 
             UpdateScreenShot();
 
-            FillBufferFromScreenWith(screenRegions.right, rightIterator);
-            FillBufferFromScreenWith(screenRegions.top, topIterator);
-            FillBufferFromScreenWith(screenRegions.left, leftIterator);
-            FillBufferFromScreenWith(screenRegions.bottom, bottomIterator);
+            FillBufferFromScreenWith(screenRegions.right);
+            FillBufferFromScreenWith(screenRegions.top);
+            FillBufferFromScreenWith(screenRegions.left);
+            FillBufferFromScreenWith(screenRegions.bottom);
         }
 
-        private void FillBufferFromScreenWith(ScreenRegion screenRegion, Func<int, int> LedIterator)
+        private void FillBufferFromScreenWith(ScreenRegion screenRegion)
         {
             foreach (var currentLedCoordinates in screenRegion.coordinates)
             {
@@ -415,10 +402,9 @@ namespace Ambilight_DFMirage
                     totalBlue += screenBuffer[colorIndex++];
                     totalGreen += screenBuffer[colorIndex++];
                     totalRed += screenBuffer[colorIndex++];
-
                 }
 
-                SetOneLedToColor(buffers[screenRegion.leds[currentLedCoordinates.Key].channel - 1], LedIterator(currentLedCoordinates.Key), Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                SetOneLedToColor(buffers[screenRegion.leds[currentLedCoordinates.Key].channel - 1], screenRegion.leds[currentLedCoordinates.Key].ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
             }
         }
 
