@@ -115,11 +115,6 @@ namespace Ambilight_DFMirage
             logger.Add("Hooked session switch event");
         }
 
-        private String HexConverter(System.Drawing.Color c)
-        {
-            return "#" + c.R.ToString("X2") + c.G.ToString("X2") + c.B.ToString("X2");
-        }
-
         private void Form1_Load(object sender, EventArgs e)
         {
             OpenHuePort();
@@ -388,14 +383,10 @@ namespace Ambilight_DFMirage
 
             UpdateScreenShot();
 
-            logger.Add("");
-            logger.Add("[");
             FillBufferFromScreenWith(screenRegions.right);
             FillBufferFromScreenWith(screenRegions.top);
             FillBufferFromScreenWith(screenRegions.left);
             FillBufferFromScreenWith(screenRegions.bottom);
-            logger.Add("]");
-            logger.Add("");
         }
 
         private void FillBufferFromScreenWith(ScreenRegion screenRegion)
@@ -414,16 +405,7 @@ namespace Ambilight_DFMirage
                     totalRed += screenBuffer[colorIndex++];
                 }
 
-                Color c = Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates);
-                int channel = screenRegion.leds[currentLedCoordinates.Key].channel - 1;
-                int ledNumber = screenRegion.leds[currentLedCoordinates.Key].ledIndex;
-
-                logger.Add("/////////////////////");
-                logger.Add("//Channel: " + channel);
-                logger.Add("//LedNumber: " + ledNumber);
-                logger.Add("'" + HexConverter(c) + "',");
-
-                SetOneLedToColor(buffers[channel], ledNumber, c);
+                SetOneLedToColor(buffers[screenRegion.leds[currentLedCoordinates.Key].channel - 1], screenRegion.leds[currentLedCoordinates.Key].ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
             }
         }
 
@@ -618,11 +600,6 @@ namespace Ambilight_DFMirage
         {
             logger.Add("Closing due to notification menu");
             Close();
-        }
-
-        private void label3_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void trackBar1_ValueChanged(object sender, EventArgs e)

@@ -113,7 +113,6 @@
             this.label3.Size = new System.Drawing.Size(61, 13);
             this.label3.TabIndex = 13;
             this.label3.Text = "by Gentle";
-            this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // notifyIcon1
             // 
