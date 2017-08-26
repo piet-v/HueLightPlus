@@ -11,7 +11,7 @@ Ambilight-clone for NZXT HUE+
 * Supports max 1 Hue+
 * Supports max 2 Channels
 * Supports max 4 LED strips / channel
-* Supports config.ini to configure before launch
+* Supports config.json to configure before launch
 
 # Requirements
 * Windows
@@ -42,21 +42,18 @@ Ambilight-clone for NZXT HUE+
 ** Bottom: bottom-left => bottom-right
 
 # Configuration
-* A Config.ini file can be used to control certain settings. Put each value on a line without delimiters!
+* A Config.json file can be used to control certain settings.
   * bool startsHidden;
   * double gamma;
-  * int rightLedCount
-  * int leftLedCount
-  * int topLedCount
-  * int bottomLedCount
-  * String huePlusPort
-  * int baudRate
   * byte delay
   * int scanDepth
   * int pixelsToSkipPerCoordinate
+  * String devices.port
+  * int Screenregion[side].leds.channel
+  * int Screenregion[side].leds.number
 
 # Todo
-* Better configuration for LED setup
+* Configure through UI
 * Support more than 1 HUE+
 * Multi monitor
 * Turn off LEDs after closing the software
