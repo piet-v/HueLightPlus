@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using HueLightPlus;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,46 +10,6 @@ using System.IO.Ports;
 using System.Threading;
 using System.Windows.Forms;
 
-struct Led
-{
-    public int channel;
-    public int ledIndex;
-
-    public Led(int channel, int ledIndex)
-    {
-        this.channel = channel;
-        this.ledIndex = ledIndex;
-    }
-}
-
-struct ScreenRegion
-{
-    public Led[] leds;
-    public Dictionary<int, Collection<Point>> coordinates;
-
-    public ScreenRegion(Led[] leds)
-    {
-        this.leds = leds;
-        this.coordinates = new Dictionary<int, Collection<Point>>();
-    }
-}
-
-struct ScreenRegions
-{
-    public ScreenRegion right;
-    public ScreenRegion left;
-    public ScreenRegion top;
-    public ScreenRegion bottom;
-
-    public ScreenRegions(ScreenRegion right, ScreenRegion top, ScreenRegion left, ScreenRegion bottom)
-    {
-        this.right = right;
-        this.top = top;
-        this.left = left;
-        this.bottom = bottom;
-    }
-}
-
 namespace Ambilight_DFMirage
 {
     public partial class Form1 : Form
@@ -58,7 +19,7 @@ namespace Ambilight_DFMirage
         PerformanceCounter total_cpu = new PerformanceCounter("Processor", "% Processor Time", "_Total");
         Dictionary<int, SerialPort> ports = new Dictionary<int, SerialPort>();
         Dictionary<int, byte[]> buffers = new Dictionary<int, byte[]>() { { 0, new byte[125] }, { 1, new byte[125] } };
-        ScreenRegions screenRegions;
+        AmbiLight ambiLight;
         Stopwatch frameTimer;
         Stopwatch portChannelTimer;
         Stopwatch portWriteTimer;
@@ -164,7 +125,11 @@ namespace Ambilight_DFMirage
             }
 
             huePlusPort = ports[0];
-            screenRegions = config.screenRegions.ToObject<ScreenRegions>();
+            ScreenSide right = config.ambiLight.right.ToObject<ScreenSide>();
+            ScreenSide top = config.ambiLight.top.ToObject<ScreenSide>();
+            ScreenSide left = config.ambiLight.left.ToObject<ScreenSide>();
+            ScreenSide bottom = config.ambiLight.bottom.ToObject<ScreenSide>();
+            ambiLight = new AmbiLight(right, top, left, bottom);
             formIsHidden = config.startsHidden;
             gamma = config.gamma;
             delay = config.delay;
@@ -215,45 +180,46 @@ namespace Ambilight_DFMirage
 
         private void SetupCoordinates()
         {
-            SetupCoordinatesWith(ref screenRegions.left, 0, screenHeight, true);
-            SetupCoordinatesWith(ref screenRegions.right, screenWidth - (scanDepth + 1), screenHeight, true);
-            SetupCoordinatesWith(ref screenRegions.top, 0, screenWidth, false);
-            SetupCoordinatesWith(ref screenRegions.bottom, screenHeight - (scanDepth + 1), screenWidth, false);
+            SetupCoordinatesWith(ambiLight.left, 0, screenHeight, true);
+            SetupCoordinatesWith(ambiLight.right, screenWidth - (scanDepth + 1), screenHeight, true);
+            SetupCoordinatesWith(ambiLight.top, 0, screenWidth, false);
+            SetupCoordinatesWith(ambiLight.bottom, screenHeight - (scanDepth + 1), screenWidth, false);
 
             logger.Add("Calculcated coordinates");
         }
 
-        private void SetupCoordinatesWith(ref ScreenRegion screenRegion, int xOrigin, int xMax, bool isHorizontal)
+        private void SetupCoordinatesWith(ScreenSide screenSide, int xOrigin, int xMax, bool isHorizontal)
         {
-            if (screenRegion.leds.Length > 0)
+            int screenRegionAmount = screenSide.screenRegions.Length;
+
+            if (screenRegionAmount > 0)
             {
-                int ratio = xMax / screenRegion.leds.Length;
+                int ratio = xMax / screenRegionAmount;
                 int count = 0;
 
-                screenRegion.coordinates = new Dictionary<int, Collection<Point>>();
-
-                for (int ledIndex = 0; ledIndex < screenRegion.leds.Length; ledIndex++)
+                for (int regionIndex = 0; regionIndex < screenRegionAmount; regionIndex++)
                 {
-                    {
-                        screenRegion.coordinates.Add(ledIndex, new Collection<Point>());
-                        for (int x = xOrigin; x < xOrigin + scanDepth; x++)
-                        {
-                            int yOrigin = ledIndex * ratio;
-                            int yMax = yOrigin + ratio;
+                    ref ScreenRegion screenRegion = ref screenSide.screenRegions[regionIndex];
 
-                            for (int y = yOrigin; y < yMax; y++)
+                    screenRegion.coordinates = new Collection<Point>();
+
+                    for (int x = xOrigin; x < xOrigin + scanDepth; x++)
+                    {
+                        int yOrigin = regionIndex * ratio;
+                        int yMax = yOrigin + ratio;
+
+                        for (int y = yOrigin; y < yMax; y++)
+                        {
+                            count++;
+                            if ((count % pixelsToSkipPerCoordinate) == 0)
                             {
-                                count++;
-                                if ((count % pixelsToSkipPerCoordinate) == 0)
+                                if (isHorizontal)
                                 {
-                                    if (isHorizontal)
-                                    {
-                                        screenRegion.coordinates[ledIndex].Add(new Point(x, y));
-                                    }
-                                    else
-                                    {
-                                        screenRegion.coordinates[ledIndex].Add(new Point(y, x));
-                                    }
+                                    screenRegion.coordinates.Add(new Point(x, y));
+                                }
+                                else
+                                {
+                                    screenRegion.coordinates.Add(new Point(y, x));
                                 }
                             }
                         }
@@ -383,20 +349,26 @@ namespace Ambilight_DFMirage
 
             UpdateScreenShot();
 
-            FillBufferFromScreenWith(screenRegions.right);
-            FillBufferFromScreenWith(screenRegions.top);
-            FillBufferFromScreenWith(screenRegions.left);
-            FillBufferFromScreenWith(screenRegions.bottom);
+            FillBufferFromScreenWith(ambiLight.right);
+            FillBufferFromScreenWith(ambiLight.top);
+            FillBufferFromScreenWith(ambiLight.left);
+            FillBufferFromScreenWith(ambiLight.bottom);
         }
 
-        private void FillBufferFromScreenWith(ScreenRegion screenRegion)
+        private void FillBufferFromScreenWith(ScreenSide screenSide)
         {
-            foreach (var currentLedCoordinates in screenRegion.coordinates)
-            {
-                totalRed = totalGreen = totalBlue = 0;
-                totalCoordinates = currentLedCoordinates.Value.Count;
+            ScreenRegion currentScreenRegion;
+            Collection<Point> currentLedCoordinates;
 
-                foreach (Point currentLedCoordinate in currentLedCoordinates.Value)
+            for (int regionIndex = 0; regionIndex < screenSide.screenRegions.Length; regionIndex++)
+            {
+                currentScreenRegion = screenSide.screenRegions[regionIndex];
+                currentLedCoordinates = currentScreenRegion.coordinates;
+
+                totalRed = totalGreen = totalBlue = 0;
+                totalCoordinates = currentLedCoordinates.Count;
+
+                foreach (Point currentLedCoordinate in currentLedCoordinates)
                 {
                     colorIndex = Screen.PrimaryScreen.Bounds.Width * 4 * currentLedCoordinate.Y + currentLedCoordinate.X * 4;
 
@@ -405,7 +377,10 @@ namespace Ambilight_DFMirage
                     totalRed += screenBuffer[colorIndex++];
                 }
 
-                SetOneLedToColor(buffers[screenRegion.leds[currentLedCoordinates.Key].channel - 1], screenRegion.leds[currentLedCoordinates.Key].ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                foreach(Led currentLed in currentScreenRegion.leds)
+                {
+                    SetOneLedToColor(buffers[currentLed.channel - 1], currentLed.ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                }
             }
         }
 
