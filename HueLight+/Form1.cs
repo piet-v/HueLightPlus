@@ -59,7 +59,6 @@ namespace Ambilight_DFMirage
             ScreenSide bottom = new ScreenSide(config.ambiLight.bottom.screenRegions.ToObject<ScreenRegion[]>(), scanDepth, pixelsToSkipPerCoordinate, Direction.Bottom);
             ScreenSide[] screenSides = new ScreenSide[] { top, right, bottom, left };
 
-
             ambiLight = new AmbiLight(screenSides, formIsHidden, delay, huePorts);
             Logger.Add("Loaded AmbiLight from config.json");
             Logger.Add("----------------------------");

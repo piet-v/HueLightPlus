@@ -16,7 +16,6 @@ namespace HueLightPlus
         public String port;
         public int baudRate;
         public byte[] gammaTable = new byte[256];
-        public bool isWaitingForFrame = true;
 
         const byte headerBits = 5;
         const byte colorBits = 3;
@@ -83,10 +82,8 @@ namespace HueLightPlus
 
         /*** BUFFER WRITING ***/
 
-        public void WriteBuffers()
+        public void WriteBuffers(Action CallBack)
         {
-            isWaitingForFrame = false;
-
             Stopwatch portWriteTimer = new Stopwatch();
             portWriteTimer.Start();
 
@@ -97,7 +94,7 @@ namespace HueLightPlus
                     portWriteTimer.Stop();
                     Logger.Add("Written port " + serialPort.PortName + " in: " + portWriteTimer.ElapsedMilliseconds);
 
-                    isWaitingForFrame = true;
+                    CallBack();
                 });
             });
         }
@@ -185,16 +182,18 @@ namespace HueLightPlus
             }
         }
 
-        public bool AreWaitingForFrame()
-        {
-            return huePorts.All(x => x.isWaitingForFrame);
-        }
-
         public void WriteBuffers()
         {
+            int threadsDone = 0;
+
             Parallel.ForEach(huePorts, (HuePort huePort) =>
             {
-                huePort.WriteBuffers();
+                huePort.WriteBuffers(() =>
+                {
+                    if (++threadsDone >= huePorts.Length) {
+                        AmbiLight.waitHandle.Set();
+                    }
+                });
             });
         }
     }

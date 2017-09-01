@@ -132,6 +132,7 @@ namespace HueLightPlus
 
     class AmbiLight
     {
+        public static readonly EventWaitHandle waitHandle = new AutoResetEvent(true);
         Stopwatch frameTimer = new Stopwatch();
         Stopwatch sectionTimer = new Stopwatch();
         public readonly driver.DesktopMirror _mirror = new driver.DesktopMirror();
@@ -232,10 +233,9 @@ namespace HueLightPlus
             long bufferSeconds = sectionTimer.ElapsedMilliseconds;
             sectionTimer.Restart();
 
-            while (!huePorts.AreWaitingForFrame())
-            {
-                ;
-            }
+            waitHandle.WaitOne(20);
+            Logger.Add("Excel is busy");
+            waitHandle.Reset();
 
             Logger.Add("Finished frame in: " + frameTimer.ElapsedMilliseconds);
             frameTimer.Restart();
