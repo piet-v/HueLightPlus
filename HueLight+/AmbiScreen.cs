@@ -234,7 +234,6 @@ namespace HueLightPlus
             sectionTimer.Restart();
 
             waitHandle.WaitOne(20);
-            Logger.Add("Excel is busy");
             waitHandle.Reset();
 
             Logger.Add("Finished frame in: " + frameTimer.ElapsedMilliseconds);
