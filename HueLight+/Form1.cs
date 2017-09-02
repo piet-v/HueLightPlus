@@ -18,7 +18,7 @@ namespace Ambilight_DFMirage
 
         public Form1()
         {
-            Logger.AddLine("INIT");
+            Logger.Init();
             InitializeComponent();
 
             SetupAmbiLight();
@@ -143,7 +143,8 @@ namespace Ambilight_DFMirage
 
         private void timer2_Tick(object sender, EventArgs e)
         {
-            Logger.Reset();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }
