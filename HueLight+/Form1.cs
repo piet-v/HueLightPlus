@@ -18,7 +18,6 @@ namespace Ambilight_DFMirage
 
         public Form1()
         {
-            Logger.Init();
             InitializeComponent();
 
             SetupAmbiLight();
