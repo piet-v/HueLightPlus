@@ -51,11 +51,18 @@ namespace HueLightPlus
         private int xOrigin;
         private int xMax;
         private bool isHorizontal;
+        private Direction direction;
 
         public ScreenSide(ScreenRegion[] screenRegions, Direction direction)
         {
             this.screenRegions = screenRegions;
+            this.direction = direction;
 
+            InitCoordinates();
+        }
+
+        public void InitCoordinates()
+        {
             switch (direction)
             {
                 case Direction.Right:
@@ -84,7 +91,7 @@ namespace HueLightPlus
         }
 
         /*** COORDINATE DICTIONARY SETUP ***/
-        private void SetupCoordinates()
+        public void SetupCoordinates()
         {
             int screenRegionAmount = screenRegions.Length;
 
@@ -131,6 +138,7 @@ namespace HueLightPlus
         public static readonly EventWaitHandle waitHandle = new AutoResetEvent(true);
         public static int scanDepth = 100;
         public static int pixelsToSkipPerCoordinate = 100; // Every LED region has (scanDepth * ScreenBorderPixelsInRegion / pixelsToSkipPerCoordinate) = possible coordinates. E.g. (100 * 144 / 100) = 144 coordinates;
+        public static int delay = 0;
 
         Stopwatch frameTimer = new Stopwatch();
         Stopwatch sectionTimer = new Stopwatch();
@@ -139,16 +147,14 @@ namespace HueLightPlus
         public HuePorts huePorts;
         public ScreenSide[] screenSides;
         public bool formIsHidden = false;
-        public byte delay = 0;
         public byte fpsCounter = 0;
         byte[] screenBuffer;
         bool isEngineEnabled = true;
         bool isReadingScreen = false;
 
-        public AmbiLight(ScreenSide[] screenSides, bool formIsHidden, byte delay, HuePorts huePorts)
+        public AmbiLight(ScreenSide[] screenSides, bool formIsHidden, HuePorts huePorts)
         {
             this.formIsHidden = formIsHidden;
-            this.delay = delay;
             this.huePorts = huePorts;
             this.screenSides = screenSides;
         }
@@ -303,7 +309,10 @@ namespace HueLightPlus
 
                 foreach (Led currentLed in currentScreenRegion.leds)
                 {
-                    huePorts.huePorts[currentLed.device].SetOneLedToColor(currentLed.channel, currentLed.ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                    if (huePorts.huePorts[currentLed.device].isEnabled)
+                    {
+                        huePorts.huePorts[currentLed.device].SetOneLedToColor(currentLed.channel, currentLed.ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                    }
                 }
             }
         }
@@ -323,6 +332,32 @@ namespace HueLightPlus
             isReadingScreen = false;
 
             return screenBuffer;
+        }
+
+        /*** CONFIG ***/
+
+        public int SetScanDepth(int scanDepth)
+        {
+            AmbiLight.scanDepth = scanDepth;
+
+            foreach (ScreenSide screenSide in screenSides)
+            {
+                screenSide.SetupCoordinates();
+            }
+
+            return scanDepth;
+        }
+
+        public int SetPixelsToSkipPerCoordinate(int pixelsToSkipPerCoordinate)
+        {
+            AmbiLight.pixelsToSkipPerCoordinate = pixelsToSkipPerCoordinate;
+
+            foreach (ScreenSide screenSide in screenSides)
+            {
+                screenSide.SetupCoordinates();
+            }
+
+            return pixelsToSkipPerCoordinate;
         }
     }
 }

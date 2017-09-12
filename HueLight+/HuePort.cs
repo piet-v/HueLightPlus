@@ -16,15 +16,17 @@ namespace HueLightPlus
         public String port;
         public int baudRate;
         public byte[] gammaTable = new byte[256];
+        public bool isEnabled = true;
 
         const byte headerBits = 5;
         const byte colorBits = 3;
 
-        public HuePort(String port, int baudRate, double gamma)
+        public HuePort(String port, int baudRate, double gamma, bool isEnabled)
         {
             serialPort = new SerialPort(port, baudRate);
             this.port = port;
             this.baudRate = baudRate;
+            this.isEnabled = isEnabled;
 
             SetGamma(gamma);
         }
@@ -57,6 +59,11 @@ namespace HueLightPlus
                     Logger.Add("Error at serial.close: " + e);
                 }
             Logger.Add("Closed serial port: " + port);
+        }
+
+        public override string ToString()
+        {
+            return port;
         }
 
         /*** GAMMA SETUP ***/
@@ -101,6 +108,15 @@ namespace HueLightPlus
 
         /*** BUFFER COLOR SETTERS ***/
 
+        public void Blackout()
+        {
+            Color black = Color.FromArgb(0, 0, 0, 0);
+            SetAllLedsToColor(0, black);
+            SetAllLedsToColor(1, black);
+
+            WriteBuffers(() => { });
+        }
+
         public void SetOneLedToColor(int channel, int ledIndex, Color color)
         {
             byte[] buffer = buffers[channel].buffer;
@@ -129,11 +145,13 @@ namespace HueLightPlus
 
     struct Device
     {
-        public String port;
+        public string port;
+        public bool isEnabled;
 
-        public Device(String port)
+        public Device(string port, bool isEnabled)
         {
             this.port = port;
+            this.isEnabled = isEnabled;
         }
     }
 
@@ -152,7 +170,8 @@ namespace HueLightPlus
             for (int deviceIndex = 0; deviceIndex < devices.Length; deviceIndex++)
             {
                 String port = devices[deviceIndex].port;
-                huePorts[deviceIndex] = new HuePort(port, baudRate, gamma);
+                bool isEnabled = devices[deviceIndex].isEnabled;
+                huePorts[deviceIndex] = new HuePort(port, baudRate, gamma, isEnabled);
             }
         }
 
@@ -186,16 +205,25 @@ namespace HueLightPlus
         {
             int threadsDone = 0;
 
+            Action waitForBuffer = () =>
+            {
+                if (++threadsDone >= huePorts.Length)
+                {
+                    threadsDone = 0;
+                    AmbiLight.waitHandle.Set();
+                }
+            };
+
             Action<HuePort> WriteBuffer = (HuePort huePort) =>
             {
-                huePort.WriteBuffers(() =>
+                if (huePort.isEnabled)
                 {
-                    if (++threadsDone >= huePorts.Length)
-                    {
-                        threadsDone = 0;
-                        AmbiLight.waitHandle.Set();
-                    }
-                });
+                    huePort.WriteBuffers(waitForBuffer);
+                }
+                else
+                {
+                    waitForBuffer();
+                }
             };
 
             if (AmbiLight.multiThreading)

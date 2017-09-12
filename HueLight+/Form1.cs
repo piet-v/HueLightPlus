@@ -44,14 +44,14 @@ namespace Ambilight_DFMirage
         private void SetupAmbiLight()
         {
             dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config.json"));
-            
+
             bool formIsHidden = config.startsHidden;
-            byte delay = config.delay;
             double gamma = config.gamma;
 
             AmbiLight.multiThreading = config.multiThreading;
             AmbiLight.scanDepth = config.scanDepth;
             AmbiLight.pixelsToSkipPerCoordinate = config.pixelsToSkipPerCoordinate;
+            AmbiLight.delay = config.delay;
 
             HuePorts huePorts = new HuePorts(config.devices.ToObject<Device[]>(), gamma);
             ScreenSide right = new ScreenSide(config.ambiLight.right.screenRegions.ToObject<ScreenRegion[]>(), Direction.Right);
@@ -60,7 +60,7 @@ namespace Ambilight_DFMirage
             ScreenSide bottom = new ScreenSide(config.ambiLight.bottom.screenRegions.ToObject<ScreenRegion[]>(), Direction.Bottom);
             ScreenSide[] screenSides = new ScreenSide[] { top, right, bottom, left };
 
-            ambiLight = new AmbiLight(screenSides, formIsHidden, delay, huePorts);
+            ambiLight = new AmbiLight(screenSides, formIsHidden, huePorts);
             Logger.Add("Loaded AmbiLight from config.json");
             Logger.Add("----------------------------");
         }
@@ -71,8 +71,15 @@ namespace Ambilight_DFMirage
             gammaTrackBar.Value = (int)(10 * Math.Round(ambiLight.huePorts.gamma, 1));
             scanDepthTrackBar.Value = AmbiLight.scanDepth;
             SkipTrackbar.Value = AmbiLight.pixelsToSkipPerCoordinate;
+            delayTrackbar.Value = AmbiLight.delay;
             gammaValueLabel.Text = ambiLight.huePorts.gamma.ToString();
-            label6.Text = "HUE+ Port: " + ambiLight.huePorts.huePorts[0].serialPort.PortName.ToString() + " Baudrate: " + ambiLight.huePorts.baudRate.ToString();
+
+            foreach (var huePort in ambiLight.huePorts.huePorts)
+            {
+                listBox1.Items.Add(huePort);
+            };
+
+            listBox1.SelectedIndex = 0;
 
             Logger.AddLine("FORM CONFIG");
             Logger.Add("Loaded form labels ");
@@ -94,28 +101,7 @@ namespace Ambilight_DFMirage
 
         /*** FORM INTERACTION ***/
 
-        private void button2_Click(object sender, EventArgs e)
-        {
-            Hide();
-            ambiLight.formIsHidden = true;
-            Logger.Add("Hide Button Clicked");
-        }
-
-        private void Form1_Shown(object sender, EventArgs e)
-        {
-            if (ambiLight.formIsHidden)
-            {
-                Hide();
-            }
-        }
-
-        private void CloseForm(object sender, Microsoft.Win32.SessionSwitchEventArgs e)
-        {
-            Logger.Add("Closing due to session change");
-            Close();
-        }
-
-        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        private void toggleVisibility()
         {
             if (ambiLight.formIsHidden)
             {
@@ -130,6 +116,35 @@ namespace Ambilight_DFMirage
             ambiLight.formIsHidden = !ambiLight.formIsHidden;
         }
 
+        private void button2_Click(object sender, EventArgs e)
+        {
+            toggleVisibility();
+        }
+
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            if (ambiLight.formIsHidden)
+            {
+                Hide();
+            }
+        }
+
+        private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            toggleVisibility();
+        }
+
+        private void hideToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            toggleVisibility();
+        }
+
+        private void CloseForm(object sender, Microsoft.Win32.SessionSwitchEventArgs e)
+        {
+            Logger.Add("Closing due to session change");
+            Close();
+        }
+
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Logger.Add("Closing due to notification menu");
@@ -142,12 +157,6 @@ namespace Ambilight_DFMirage
             gammaValueLabel.Text = ambiLight.huePorts.SetGamma(gammaTrackBar.Value / 10.0).ToString();
         }
 
-        private void timer2_Tick(object sender, EventArgs e)
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-        }
-
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
             Logger.AddLine("UI - MULTI-THREADING");
@@ -157,16 +166,37 @@ namespace Ambilight_DFMirage
         private void trackBar2_ValueChanged(object sender, EventArgs e)
         {
             Logger.AddLine("UI - SCANDEPTH");
-            AmbiLight.scanDepth = scanDepthTrackBar.Value;
-            scanDepthValueLabel.Text = AmbiLight.scanDepth.ToString();
-            //TODO recalculate coordinates
+            scanDepthValueLabel.Text = ambiLight.SetScanDepth(scanDepthTrackBar.Value).ToString();
         }
 
         private void trackBar3_ValueChanged(object sender, EventArgs e)
         {
             Logger.AddLine("UI - SKIP");
-            AmbiLight.pixelsToSkipPerCoordinate = SkipTrackbar.Value;
-            skipValueLabel.Text = AmbiLight.pixelsToSkipPerCoordinate.ToString();
+            skipValueLabel.Text = ambiLight.SetPixelsToSkipPerCoordinate(SkipTrackbar.Value).ToString();
+        }
+
+        private void portEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            ambiLight.huePorts.huePorts[listBox1.SelectedIndex].isEnabled = portEnabledCheckbox.Checked;
+            if (!portEnabledCheckbox.Checked)
+            {
+                AmbiLight.waitHandle.WaitOne(20);
+                ambiLight.huePorts.huePorts[listBox1.SelectedIndex].Blackout();
+            }
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            portEnabledCheckbox.Checked = ambiLight.huePorts.huePorts[listBox1.SelectedIndex].isEnabled;
+        }
+
+        /*** GARBAGE COLLECTION FOR DESKTOPMIRROR ***/
+
+        private void timer2_Tick(object sender, EventArgs e)
+        {
+            Logger.ToFile();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -174,14 +204,15 @@ namespace Ambilight_DFMirage
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void label1_Click(object sender, EventArgs e)
         {
 
         }
 
-        private void label3_Click(object sender, EventArgs e)
+        private void delayTrackbar_ValueChanged(object sender, EventArgs e)
         {
-
+            AmbiLight.delay = delayTrackbar.Value;
+            delayValueLabel.Text = delayTrackbar.Value.ToString();
         }
     }
 }

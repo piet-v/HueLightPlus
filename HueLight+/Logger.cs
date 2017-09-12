@@ -20,9 +20,9 @@ namespace HueLightPlus
             Add("");
         }
 
-        public static void ToFile(String fileName)
+        public static void ToFile()
         {
-            File.WriteAllLines(fileName, logger);
+            File.WriteAllLines("log.txt", logger);
             Reset();
         }
 
@@ -36,7 +36,7 @@ namespace HueLightPlus
             Add("-------------------------------------------------------------------");
             Add("Log End");
             Add(DateTime.Now.ToString());
-            ToFile("log.txt");
+            ToFile();
         }
     }
 }
