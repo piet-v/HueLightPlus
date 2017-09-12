@@ -48,23 +48,18 @@ namespace HueLightPlus
         public ScreenRegion[] screenRegions;
         private int screenHeight = Screen.PrimaryScreen.Bounds.Height;
         private int screenWidth = Screen.PrimaryScreen.Bounds.Width;
-        public readonly int scanDepth = 100;
-        public readonly int pixelsToSkipPerCoordinate = 100; // Every LED region has (scanDepth * ScreenBorderPixelsInRegion / pixelsToSkipPerCoordinate) = possible coordinates. E.g. (100 * 144 / 100) = 144 coordinates;
         private int xOrigin;
         private int xMax;
         private bool isHorizontal;
 
-        public ScreenSide(ScreenRegion[] screenRegions, int scanDepth, int pixelsToSkipPerCoordinate, Direction direction)
+        public ScreenSide(ScreenRegion[] screenRegions, Direction direction)
         {
             this.screenRegions = screenRegions;
-
-            this.scanDepth = scanDepth;
-            this.pixelsToSkipPerCoordinate = pixelsToSkipPerCoordinate;
 
             switch (direction)
             {
                 case Direction.Right:
-                    xOrigin = screenWidth - (scanDepth + 1);
+                    xOrigin = screenWidth - (AmbiLight.scanDepth + 1);
                     xMax = screenHeight;
                     isHorizontal = true;
                     break;
@@ -79,7 +74,7 @@ namespace HueLightPlus
                     isHorizontal = false;
                     break;
                 default:
-                    xOrigin = screenHeight - (scanDepth + 1);
+                    xOrigin = screenHeight - (AmbiLight.scanDepth + 1);
                     xMax = screenWidth;
                     isHorizontal = false;
                     break;
@@ -104,7 +99,7 @@ namespace HueLightPlus
 
                     screenRegion.coordinates = new Collection<Point>();
 
-                    for (int x = xOrigin; x < xOrigin + scanDepth; x++)
+                    for (int x = xOrigin; x < xOrigin + AmbiLight.scanDepth; x++)
                     {
                         int yOrigin = regionIndex * ratio;
                         int yMax = yOrigin + ratio;
@@ -112,7 +107,7 @@ namespace HueLightPlus
                         for (int y = yOrigin; y < yMax; y++)
                         {
                             count++;
-                            if ((count % pixelsToSkipPerCoordinate) == 0)
+                            if ((count % AmbiLight.pixelsToSkipPerCoordinate) == 0)
                             {
                                 if (isHorizontal)
                                 {
@@ -132,7 +127,11 @@ namespace HueLightPlus
 
     class AmbiLight
     {
+        public static bool multiThreading = false;
         public static readonly EventWaitHandle waitHandle = new AutoResetEvent(true);
+        public static int scanDepth = 100;
+        public static int pixelsToSkipPerCoordinate = 100; // Every LED region has (scanDepth * ScreenBorderPixelsInRegion / pixelsToSkipPerCoordinate) = possible coordinates. E.g. (100 * 144 / 100) = 144 coordinates;
+
         Stopwatch frameTimer = new Stopwatch();
         Stopwatch sectionTimer = new Stopwatch();
         public readonly driver.DesktopMirror _mirror = new driver.DesktopMirror();
@@ -155,7 +154,6 @@ namespace HueLightPlus
         }
 
         /*** AMBILIGHT STATE MANAGEMENT ***/
-
         public void Start()
         {
             huePorts.OpenAll();
@@ -184,7 +182,6 @@ namespace HueLightPlus
         }
 
         /*** MIRROR DRIVER METHODS ***/
-
         private void ConnectMirrorDriver()
         {
             _mirror.Load();
@@ -201,7 +198,6 @@ namespace HueLightPlus
         }
 
         /*** ENGINE ***/
-
         private void AmbiEngine()
         {
             frameTimer.Start();
@@ -245,7 +241,6 @@ namespace HueLightPlus
         }
 
         /*** SEND BUFFERS ***/
-
         private void SendBuffers()
         {
             sectionTimer.Restart();
@@ -257,7 +252,6 @@ namespace HueLightPlus
         }
 
         /*** FILL BUFFERS ***/
-
         private void FillBuffersFromScreen()
         {
             if (delay > 0)
@@ -267,7 +261,17 @@ namespace HueLightPlus
 
             UpdateScreenShot();
 
-            Parallel.ForEach(screenSides, FillBufferFromScreenWith);
+            if (multiThreading)
+            {
+                Parallel.ForEach(screenSides, FillBufferFromScreenWith);
+            }
+            else
+            {
+                foreach (var screenSide in screenSides)
+                {
+                    FillBufferFromScreenWith(screenSide);
+                }
+            }
         }
 
         private void FillBufferFromScreenWith(ScreenSide screenSide)

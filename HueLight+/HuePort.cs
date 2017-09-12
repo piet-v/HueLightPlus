@@ -186,15 +186,29 @@ namespace HueLightPlus
         {
             int threadsDone = 0;
 
-            Parallel.ForEach(huePorts, (HuePort huePort) =>
+            Action<HuePort> WriteBuffer = (HuePort huePort) =>
             {
                 huePort.WriteBuffers(() =>
                 {
-                    if (++threadsDone >= huePorts.Length) {
+                    if (++threadsDone >= huePorts.Length)
+                    {
+                        threadsDone = 0;
                         AmbiLight.waitHandle.Set();
                     }
                 });
-            });
+            };
+
+            if (AmbiLight.multiThreading)
+            {
+                Parallel.ForEach(huePorts, WriteBuffer);
+            }
+            else
+            {
+                foreach (var huePort in huePorts)
+                {
+                    WriteBuffer(huePort);
+                }
+            }
         }
     }
 }

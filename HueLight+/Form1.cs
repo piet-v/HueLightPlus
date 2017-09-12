@@ -44,18 +44,20 @@ namespace Ambilight_DFMirage
         private void SetupAmbiLight()
         {
             dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config.json"));
-
-            int scanDepth = config.scanDepth;
-            int pixelsToSkipPerCoordinate = config.pixelsToSkipPerCoordinate;
+            
             bool formIsHidden = config.startsHidden;
             byte delay = config.delay;
             double gamma = config.gamma;
 
+            AmbiLight.multiThreading = config.multiThreading;
+            AmbiLight.scanDepth = config.scanDepth;
+            AmbiLight.pixelsToSkipPerCoordinate = config.pixelsToSkipPerCoordinate;
+
             HuePorts huePorts = new HuePorts(config.devices.ToObject<Device[]>(), gamma);
-            ScreenSide right = new ScreenSide(config.ambiLight.right.screenRegions.ToObject<ScreenRegion[]>(), scanDepth, pixelsToSkipPerCoordinate, Direction.Right);
-            ScreenSide left = new ScreenSide(config.ambiLight.left.screenRegions.ToObject<ScreenRegion[]>(), scanDepth, pixelsToSkipPerCoordinate, Direction.Left);
-            ScreenSide top = new ScreenSide(config.ambiLight.top.screenRegions.ToObject<ScreenRegion[]>(), scanDepth, pixelsToSkipPerCoordinate, Direction.Top);
-            ScreenSide bottom = new ScreenSide(config.ambiLight.bottom.screenRegions.ToObject<ScreenRegion[]>(), scanDepth, pixelsToSkipPerCoordinate, Direction.Bottom);
+            ScreenSide right = new ScreenSide(config.ambiLight.right.screenRegions.ToObject<ScreenRegion[]>(), Direction.Right);
+            ScreenSide left = new ScreenSide(config.ambiLight.left.screenRegions.ToObject<ScreenRegion[]>(), Direction.Left);
+            ScreenSide top = new ScreenSide(config.ambiLight.top.screenRegions.ToObject<ScreenRegion[]>(), Direction.Top);
+            ScreenSide bottom = new ScreenSide(config.ambiLight.bottom.screenRegions.ToObject<ScreenRegion[]>(), Direction.Bottom);
             ScreenSide[] screenSides = new ScreenSide[] { top, right, bottom, left };
 
             ambiLight = new AmbiLight(screenSides, formIsHidden, delay, huePorts);
@@ -65,12 +67,12 @@ namespace Ambilight_DFMirage
 
         private void SetupUiLabels()
         {
-
-            trackBar1.Value = (int)(10 * Math.Round(ambiLight.huePorts.gamma, 1));
-            label4.Text = ambiLight.huePorts.gamma.ToString();
-            label5.Text = "";
+            multiThreadingCheckBox.Checked = AmbiLight.multiThreading;
+            gammaTrackBar.Value = (int)(10 * Math.Round(ambiLight.huePorts.gamma, 1));
+            scanDepthTrackBar.Value = AmbiLight.scanDepth;
+            SkipTrackbar.Value = AmbiLight.pixelsToSkipPerCoordinate;
+            gammaValueLabel.Text = ambiLight.huePorts.gamma.ToString();
             label6.Text = "HUE+ Port: " + ambiLight.huePorts.huePorts[0].serialPort.PortName.ToString() + " Baudrate: " + ambiLight.huePorts.baudRate.ToString();
-            label7.Text = "ScanDepth: " + ambiLight.screenSides[0].scanDepth.ToString() + " Skip: " + ambiLight.screenSides[0].pixelsToSkipPerCoordinate.ToString();
 
             Logger.AddLine("FORM CONFIG");
             Logger.Add("Loaded form labels ");
@@ -84,8 +86,8 @@ namespace Ambilight_DFMirage
             String cpu = "CPU: " + (Math.Round(total_cpu.NextValue())).ToString() + " %";
 
             notifyIcon1.Text = "HueLight+ - " + fps + " - " + cpu;
-            label1.Text = fps;
-            label2.Text = cpu;
+            fpsLabel.Text = fps;
+            cpuLabel.Text = cpu;
 
             ambiLight.fpsCounter = 0;
         }
@@ -137,13 +139,49 @@ namespace Ambilight_DFMirage
         private void trackBar1_ValueChanged(object sender, EventArgs e)
         {
             Logger.AddLine("UI - GAMMA");
-            label4.Text = ambiLight.huePorts.SetGamma(trackBar1.Value / 10.0).ToString();
+            gammaValueLabel.Text = ambiLight.huePorts.SetGamma(gammaTrackBar.Value / 10.0).ToString();
         }
 
         private void timer2_Tick(object sender, EventArgs e)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            Logger.AddLine("UI - MULTI-THREADING");
+            AmbiLight.multiThreading = multiThreadingCheckBox.Checked;
+        }
+
+        private void trackBar2_ValueChanged(object sender, EventArgs e)
+        {
+            Logger.AddLine("UI - SCANDEPTH");
+            AmbiLight.scanDepth = scanDepthTrackBar.Value;
+            scanDepthValueLabel.Text = AmbiLight.scanDepth.ToString();
+            //TODO recalculate coordinates
+        }
+
+        private void trackBar3_ValueChanged(object sender, EventArgs e)
+        {
+            Logger.AddLine("UI - SKIP");
+            AmbiLight.pixelsToSkipPerCoordinate = SkipTrackbar.Value;
+            skipValueLabel.Text = AmbiLight.pixelsToSkipPerCoordinate.ToString();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
