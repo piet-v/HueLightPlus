@@ -199,16 +199,6 @@ namespace Ambilight_DFMirage
             GC.WaitForPendingFinalizers();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void delayTrackbar_ValueChanged(object sender, EventArgs e)
         {
             AmbiLight.delay = delayTrackbar.Value;
