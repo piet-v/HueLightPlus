@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO.Ports;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -322,17 +323,14 @@ namespace HueLightPlus
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void updatePreview()
         {
             if (previewMode)
             {
-                try
+                lock (pictureBox)
                 {
-                    pictureBox.Image = new Bitmap(colorPreview, pictureBoxX, pictureBoxY);
-                }
-                catch (Exception e)
-                {
-                    Logger.Add("Error at pictureBox.Image: " + e);
+                    pictureBox.Image = new Bitmap((Bitmap) colorPreview.Clone(), pictureBoxX, pictureBoxY);
                 }
             }
         }
@@ -371,7 +369,7 @@ namespace HueLightPlus
                     if (huePorts.huePorts[currentLed.device].isEnabled)
                     {
                         huePorts.huePorts[currentLed.device].SetOneLedToColor(currentLed.channel, currentLed.ledIndex, color);
-                    }   
+                    }
                 }
 
                 if (previewMode)
