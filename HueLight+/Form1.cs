@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Ports;
 using System.Windows.Forms;
@@ -43,7 +45,7 @@ namespace Ambilight_DFMirage
 
         private void SetupAmbiLight()
         {
-            dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config.json"));
+            dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config2.json"));
 
             bool formIsHidden = config.startsHidden;
             double gamma = config.gamma;
@@ -52,6 +54,8 @@ namespace Ambilight_DFMirage
             AmbiLight.scanDepth = config.scanDepth;
             AmbiLight.pixelsToSkipPerCoordinate = config.pixelsToSkipPerCoordinate;
             AmbiLight.delay = config.delay;
+            AmbiLight.frameTimeout = config.frameTimeout;
+            AmbiLight.previewMode = config.preview;
 
             HuePorts huePorts = new HuePorts(config.devices.ToObject<Device[]>(), gamma);
             ScreenSide right = new ScreenSide(config.ambiLight.right.screenRegions.ToObject<ScreenRegion[]>(), Direction.Right);
@@ -60,7 +64,7 @@ namespace Ambilight_DFMirage
             ScreenSide bottom = new ScreenSide(config.ambiLight.bottom.screenRegions.ToObject<ScreenRegion[]>(), Direction.Bottom);
             ScreenSide[] screenSides = new ScreenSide[] { top, right, bottom, left };
 
-            ambiLight = new AmbiLight(screenSides, formIsHidden, huePorts);
+            ambiLight = new AmbiLight(screenSides, formIsHidden, huePorts, previewImage);
             Logger.Add("Loaded AmbiLight from config.json");
             Logger.Add("----------------------------");
         }
@@ -73,6 +77,9 @@ namespace Ambilight_DFMirage
             SkipTrackbar.Value = AmbiLight.pixelsToSkipPerCoordinate;
             delayTrackbar.Value = AmbiLight.delay;
             gammaValueLabel.Text = ambiLight.huePorts.gamma.ToString();
+            idleTrackbar.Value = AmbiLight.frameTimeout;
+            idleValueLabel.Text = AmbiLight.frameTimeout.ToString();
+            previewCheckbox.Checked = AmbiLight.previewMode;
 
             foreach (var huePort in ambiLight.huePorts.huePorts)
             {
@@ -180,7 +187,7 @@ namespace Ambilight_DFMirage
             ambiLight.huePorts.huePorts[listBox1.SelectedIndex].isEnabled = portEnabledCheckbox.Checked;
             if (!portEnabledCheckbox.Checked)
             {
-                AmbiLight.waitHandle.WaitOne(20);
+                AmbiLight.waitHandle.WaitOne(AmbiLight.frameTimeout);
                 ambiLight.huePorts.huePorts[listBox1.SelectedIndex].Blackout();
             }
         }
@@ -203,6 +210,26 @@ namespace Ambilight_DFMirage
         {
             AmbiLight.delay = delayTrackbar.Value;
             delayValueLabel.Text = delayTrackbar.Value.ToString();
+        }
+
+        private void checkBox1_CheckedChanged_1(object sender, EventArgs e)
+        {
+            AmbiLight.previewMode = previewCheckbox.Checked;
+
+            if (previewCheckbox.Checked)
+            {
+                this.Width = 550;
+            }
+            else
+            {
+                this.Width = 329;
+            }
+        }
+
+        private void idleTrackbar_Scroll(object sender, EventArgs e)
+        {
+            AmbiLight.frameTimeout = idleTrackbar.Value;
+            idleValueLabel.Text = idleTrackbar.Value.ToString();
         }
     }
 }

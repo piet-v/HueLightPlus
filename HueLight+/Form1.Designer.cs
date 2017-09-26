@@ -56,11 +56,18 @@
             this.delayValueLabel = new System.Windows.Forms.Label();
             this.delayTrackbar = new System.Windows.Forms.TrackBar();
             this.delayLabel = new System.Windows.Forms.Label();
+            this.previewCheckbox = new System.Windows.Forms.CheckBox();
+            this.previewImage = new System.Windows.Forms.PictureBox();
+            this.idleTrackbar = new System.Windows.Forms.TrackBar();
+            this.idleLabel = new System.Windows.Forms.Label();
+            this.idleValueLabel = new System.Windows.Forms.Label();
             this.contextMenuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gammaTrackBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.scanDepthTrackBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.SkipTrackbar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.delayTrackbar)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.previewImage)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.idleTrackbar)).BeginInit();
             this.SuspendLayout();
             // 
             // gammaValueLabel
@@ -244,7 +251,7 @@
             // listBox1
             // 
             this.listBox1.FormattingEnabled = true;
-            this.listBox1.Location = new System.Drawing.Point(12, 412);
+            this.listBox1.Location = new System.Drawing.Point(12, 426);
             this.listBox1.Name = "listBox1";
             this.listBox1.Size = new System.Drawing.Size(281, 69);
             this.listBox1.TabIndex = 28;
@@ -253,7 +260,7 @@
             // portEnabledCheckbox
             // 
             this.portEnabledCheckbox.AutoSize = true;
-            this.portEnabledCheckbox.Location = new System.Drawing.Point(12, 488);
+            this.portEnabledCheckbox.Location = new System.Drawing.Point(12, 502);
             this.portEnabledCheckbox.Name = "portEnabledCheckbox";
             this.portEnabledCheckbox.Size = new System.Drawing.Size(92, 17);
             this.portEnabledCheckbox.TabIndex = 29;
@@ -298,11 +305,65 @@
             this.delayLabel.TabIndex = 31;
             this.delayLabel.Text = "Delay";
             // 
+            // previewCheckbox
+            // 
+            this.previewCheckbox.AutoSize = true;
+            this.previewCheckbox.Location = new System.Drawing.Point(15, 62);
+            this.previewCheckbox.Name = "previewCheckbox";
+            this.previewCheckbox.Size = new System.Drawing.Size(104, 17);
+            this.previewCheckbox.TabIndex = 34;
+            this.previewCheckbox.Text = "Color preview";
+            this.previewCheckbox.UseVisualStyleBackColor = true;
+            this.previewCheckbox.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged_1);
+            // 
+            // previewImage
+            // 
+            this.previewImage.Location = new System.Drawing.Point(322, 38);
+            this.previewImage.Name = "previewImage";
+            this.previewImage.Size = new System.Drawing.Size(200, 120);
+            this.previewImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.previewImage.TabIndex = 35;
+            this.previewImage.TabStop = false;
+            // 
+            // idleTrackbar
+            // 
+            this.idleTrackbar.Location = new System.Drawing.Point(12, 375);
+            this.idleTrackbar.Maximum = 2000;
+            this.idleTrackbar.Minimum = 20;
+            this.idleTrackbar.Name = "idleTrackbar";
+            this.idleTrackbar.Size = new System.Drawing.Size(281, 45);
+            this.idleTrackbar.TabIndex = 36;
+            this.idleTrackbar.Value = 1000;
+            this.idleTrackbar.Scroll += new System.EventHandler(this.idleTrackbar_Scroll);
+            // 
+            // idleLabel
+            // 
+            this.idleLabel.AutoSize = true;
+            this.idleLabel.Location = new System.Drawing.Point(15, 356);
+            this.idleLabel.Name = "idleLabel";
+            this.idleLabel.Size = new System.Drawing.Size(85, 13);
+            this.idleLabel.TabIndex = 37;
+            this.idleLabel.Text = "Frame timeout";
+            // 
+            // idleValueLabel
+            // 
+            this.idleValueLabel.AutoSize = true;
+            this.idleValueLabel.Location = new System.Drawing.Point(106, 356);
+            this.idleValueLabel.Name = "idleValueLabel";
+            this.idleValueLabel.Size = new System.Drawing.Size(121, 13);
+            this.idleValueLabel.TabIndex = 38;
+            this.idleValueLabel.Text = "Frame timeout value";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(313, 578);
+            this.Controls.Add(this.idleValueLabel);
+            this.Controls.Add(this.idleLabel);
+            this.Controls.Add(this.idleTrackbar);
+            this.Controls.Add(this.previewImage);
+            this.Controls.Add(this.previewCheckbox);
             this.Controls.Add(this.delayValueLabel);
             this.Controls.Add(this.delayTrackbar);
             this.Controls.Add(this.delayLabel);
@@ -340,6 +401,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.scanDepthTrackBar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.SkipTrackbar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.delayTrackbar)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.previewImage)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.idleTrackbar)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -372,6 +435,11 @@
         private System.Windows.Forms.Label delayValueLabel;
         private System.Windows.Forms.TrackBar delayTrackbar;
         private System.Windows.Forms.Label delayLabel;
+        private System.Windows.Forms.CheckBox previewCheckbox;
+        private System.Windows.Forms.PictureBox previewImage;
+        private System.Windows.Forms.TrackBar idleTrackbar;
+        private System.Windows.Forms.Label idleLabel;
+        private System.Windows.Forms.Label idleValueLabel;
     }
 }
 

@@ -46,12 +46,12 @@ namespace HueLightPlus
     class ScreenSide
     {
         public ScreenRegion[] screenRegions;
-        private int screenHeight = Screen.PrimaryScreen.Bounds.Height;
-        private int screenWidth = Screen.PrimaryScreen.Bounds.Width;
+        public int screenHeight = Screen.PrimaryScreen.Bounds.Height;
+        public int screenWidth = Screen.PrimaryScreen.Bounds.Width;
         private int xOrigin;
         private int xMax;
         private bool isHorizontal;
-        private Direction direction;
+        public Direction direction;
 
         public ScreenSide(ScreenRegion[] screenRegions, Direction direction)
         {
@@ -139,6 +139,8 @@ namespace HueLightPlus
         public static int scanDepth = 100;
         public static int pixelsToSkipPerCoordinate = 100; // Every LED region has (scanDepth * ScreenBorderPixelsInRegion / pixelsToSkipPerCoordinate) = possible coordinates. E.g. (100 * 144 / 100) = 144 coordinates;
         public static int delay = 0;
+        public static int frameTimeout = 2000;
+        public static bool previewMode = false;
 
         Stopwatch frameTimer = new Stopwatch();
         Stopwatch sectionTimer = new Stopwatch();
@@ -151,12 +153,50 @@ namespace HueLightPlus
         byte[] screenBuffer;
         bool isEngineEnabled = true;
         bool isReadingScreen = false;
+        private Bitmap colorPreview;
+        private PictureBox pictureBox;
+        private int pictureBoxX;
+        private int pictureBoxY;
 
-        public AmbiLight(ScreenSide[] screenSides, bool formIsHidden, HuePorts huePorts)
+        public AmbiLight(ScreenSide[] screenSides, bool formIsHidden, HuePorts huePorts, PictureBox pictureBox)
         {
             this.formIsHidden = formIsHidden;
             this.huePorts = huePorts;
             this.screenSides = screenSides;
+            this.pictureBox = pictureBox;
+
+            setupPictureBox();
+        }
+
+        private void setupPictureBox()
+        {
+            int left = 0;
+            int right = 0;
+            int top = 0;
+            int bottom = 0;
+
+            foreach (var screenSide in screenSides)
+            {
+                switch (screenSide.direction)
+                {
+                    case Direction.Right:
+                        right = screenSide.screenRegions.Length;
+                        break;
+                    case Direction.Left:
+                        left = screenSide.screenRegions.Length;
+                        break;
+                    case Direction.Top:
+                        top = screenSide.screenRegions.Length;
+                        break;
+                    default:
+                        bottom = screenSide.screenRegions.Length;
+                        break;
+                }
+            }
+            pictureBoxX = Math.Max(top, bottom);
+            pictureBoxY = Math.Max(left, right) + 2;
+
+            colorPreview = new Bitmap(pictureBoxX, pictureBoxY);
         }
 
         /*** AMBILIGHT STATE MANAGEMENT ***/
@@ -235,7 +275,7 @@ namespace HueLightPlus
             long bufferSeconds = sectionTimer.ElapsedMilliseconds;
             sectionTimer.Restart();
 
-            waitHandle.WaitOne(20);
+            waitHandle.WaitOne(frameTimeout);
             waitHandle.Reset();
 
             Logger.Add("Finished frame in: " + frameTimer.ElapsedMilliseconds);
@@ -270,13 +310,23 @@ namespace HueLightPlus
             if (multiThreading)
             {
                 Parallel.ForEach(screenSides, FillBufferFromScreenWith);
+                updatePreview();
             }
             else
             {
                 foreach (var screenSide in screenSides)
                 {
                     FillBufferFromScreenWith(screenSide);
+                    updatePreview();
                 }
+            }
+        }
+
+        private void updatePreview()
+        {
+            if (previewMode)
+            {
+                pictureBox.Image = new Bitmap(colorPreview, pictureBoxX, pictureBoxY);
             }
         }
 
@@ -307,11 +357,32 @@ namespace HueLightPlus
                     totalRed += screenBuffer[colorIndex++];
                 }
 
+                Color color = Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates);
+
                 foreach (Led currentLed in currentScreenRegion.leds)
                 {
                     if (huePorts.huePorts[currentLed.device].isEnabled)
                     {
-                        huePorts.huePorts[currentLed.device].SetOneLedToColor(currentLed.channel, currentLed.ledIndex, Color.FromArgb(totalRed / totalCoordinates, totalGreen / totalCoordinates, totalBlue / totalCoordinates));
+                        huePorts.huePorts[currentLed.device].SetOneLedToColor(currentLed.channel, currentLed.ledIndex, color);
+                    }   
+                }
+
+                if (previewMode)
+                {
+                    switch (screenSide.direction)
+                    {
+                        case Direction.Right:
+                            colorPreview.SetPixel(19, regionIndex + 1, color);
+                            break;
+                        case Direction.Left:
+                            colorPreview.SetPixel(0, regionIndex + 1, color);
+                            break;
+                        case Direction.Top:
+                            colorPreview.SetPixel(regionIndex, 1, color);
+                            break;
+                        default:
+                            colorPreview.SetPixel(regionIndex, 11, color);
+                            break;
                     }
                 }
             }
