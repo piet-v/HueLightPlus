@@ -45,7 +45,7 @@ namespace Ambilight_DFMirage
 
         private void SetupAmbiLight()
         {
-            dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config2.json"));
+            dynamic config = JsonConvert.DeserializeObject(File.ReadAllText("config.json"));
 
             bool formIsHidden = config.startsHidden;
             double gamma = config.gamma;

@@ -326,7 +326,14 @@ namespace HueLightPlus
         {
             if (previewMode)
             {
-                pictureBox.Image = new Bitmap(colorPreview, pictureBoxX, pictureBoxY);
+                try
+                {
+                    pictureBox.Image = new Bitmap(colorPreview, pictureBoxX, pictureBoxY);
+                }
+                catch (Exception e)
+                {
+                    Logger.Add("Error at pictureBox.Image: " + e);
+                }
             }
         }
 
