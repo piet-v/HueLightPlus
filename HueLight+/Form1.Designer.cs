@@ -61,6 +61,7 @@
             this.idleTrackbar = new System.Windows.Forms.TrackBar();
             this.idleLabel = new System.Windows.Forms.Label();
             this.idleValueLabel = new System.Windows.Forms.Label();
+            this.PreviewImageInfoLabel = new System.Windows.Forms.Label();
             this.contextMenuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gammaTrackBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.scanDepthTrackBar)).BeginInit();
@@ -310,9 +311,9 @@
             this.previewCheckbox.AutoSize = true;
             this.previewCheckbox.Location = new System.Drawing.Point(15, 62);
             this.previewCheckbox.Name = "previewCheckbox";
-            this.previewCheckbox.Size = new System.Drawing.Size(104, 17);
+            this.previewCheckbox.Size = new System.Drawing.Size(146, 17);
             this.previewCheckbox.TabIndex = 34;
-            this.previewCheckbox.Text = "Color preview";
+            this.previewCheckbox.Text = "Color preview (BETA)";
             this.previewCheckbox.UseVisualStyleBackColor = true;
             this.previewCheckbox.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged_1);
             // 
@@ -354,11 +355,21 @@
             this.idleValueLabel.TabIndex = 38;
             this.idleValueLabel.Text = "Frame timeout value";
             // 
+            // PreviewImageInfoLabel
+            // 
+            this.PreviewImageInfoLabel.AutoSize = true;
+            this.PreviewImageInfoLabel.Location = new System.Drawing.Point(347, 161);
+            this.PreviewImageInfoLabel.Name = "PreviewImageInfoLabel";
+            this.PreviewImageInfoLabel.Size = new System.Drawing.Size(139, 13);
+            this.PreviewImageInfoLabel.TabIndex = 39;
+            this.PreviewImageInfoLabel.Text = "(Testing purpose only)";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(313, 578);
+            this.ClientSize = new System.Drawing.Size(541, 578);
+            this.Controls.Add(this.PreviewImageInfoLabel);
             this.Controls.Add(this.idleValueLabel);
             this.Controls.Add(this.idleLabel);
             this.Controls.Add(this.idleTrackbar);
@@ -440,6 +451,7 @@
         private System.Windows.Forms.TrackBar idleTrackbar;
         private System.Windows.Forms.Label idleLabel;
         private System.Windows.Forms.Label idleValueLabel;
+        private System.Windows.Forms.Label PreviewImageInfoLabel;
     }
 }
 
