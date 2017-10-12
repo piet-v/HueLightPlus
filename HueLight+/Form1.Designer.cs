@@ -361,18 +361,18 @@
             this.label3.AutoSize = true;
             this.label3.Location = new System.Drawing.Point(322, 161);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(193, 13);
+            this.label3.Size = new System.Drawing.Size(205, 13);
             this.label3.TabIndex = 41;
-            this.label3.Text = "It will randomly freeze the app";
+            this.label3.Text = "!It will randomly freeze the app!";
             // 
             // label4
             // 
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(322, 22);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(193, 13);
+            this.label4.Size = new System.Drawing.Size(205, 13);
             this.label4.TabIndex = 42;
-            this.label4.Text = "Use this only to test your leds";
+            this.label4.Text = "!Use this only to test your leds!";
             // 
             // Form1
             // 
