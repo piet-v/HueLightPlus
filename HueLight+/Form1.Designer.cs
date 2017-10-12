@@ -61,7 +61,8 @@
             this.idleTrackbar = new System.Windows.Forms.TrackBar();
             this.idleLabel = new System.Windows.Forms.Label();
             this.idleValueLabel = new System.Windows.Forms.Label();
-            this.PreviewImageInfoLabel = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
             this.contextMenuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.gammaTrackBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.scanDepthTrackBar)).BeginInit();
@@ -355,21 +356,31 @@
             this.idleValueLabel.TabIndex = 38;
             this.idleValueLabel.Text = "Frame timeout value";
             // 
-            // PreviewImageInfoLabel
+            // label3
             // 
-            this.PreviewImageInfoLabel.AutoSize = true;
-            this.PreviewImageInfoLabel.Location = new System.Drawing.Point(347, 161);
-            this.PreviewImageInfoLabel.Name = "PreviewImageInfoLabel";
-            this.PreviewImageInfoLabel.Size = new System.Drawing.Size(139, 13);
-            this.PreviewImageInfoLabel.TabIndex = 39;
-            this.PreviewImageInfoLabel.Text = "(Testing purpose only)";
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(322, 161);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(193, 13);
+            this.label3.TabIndex = 41;
+            this.label3.Text = "It will randomly freeze the app";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(322, 22);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(193, 13);
+            this.label4.TabIndex = 42;
+            this.label4.Text = "Use this only to test your leds";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(541, 578);
-            this.Controls.Add(this.PreviewImageInfoLabel);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.idleValueLabel);
             this.Controls.Add(this.idleLabel);
             this.Controls.Add(this.idleTrackbar);
@@ -451,7 +462,8 @@
         private System.Windows.Forms.TrackBar idleTrackbar;
         private System.Windows.Forms.Label idleLabel;
         private System.Windows.Forms.Label idleValueLabel;
-        private System.Windows.Forms.Label PreviewImageInfoLabel;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label4;
     }
 }
 
